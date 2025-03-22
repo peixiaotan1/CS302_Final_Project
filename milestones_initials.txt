@@ -1,0 +1,17 @@
+Xiaopei Tan
+
+CS302 Final Project rubric
+3/22/2025
+Have the git repository and project folders setup (5pts)
+Have the UI design draft                          (5pts)
+Have the React UI implemented                     (20pts)
+Have the Button feature implemented               (10pts)
+
+
+
+Time log:
+Have the git repository and project folders setup (10 mins)
+Have the UI design draft                          (30 mins)
+Research on React implement and env setup         (1 hour)             
+Have the React UI implemented                     (3 hours)
+Have the Button feature implemented               (1 hour)
