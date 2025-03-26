@@ -15,3 +15,11 @@ Have the UI design draft                          (30 mins)
 Research on React implement and env setup         (1 hour)             
 Have the React UI implemented                     (3 hours)
 Have the Button feature implemented               (1 hour)
+
+
+
+Next Plan:
+Further polish the UI and details                (10pts)
+Add more features                                (30pts)
+Integrate with backend                           (30pts)
+Testing product and fix bugs                     (15pts)
