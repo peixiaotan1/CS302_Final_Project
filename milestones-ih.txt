@@ -7,7 +7,7 @@ at least one of your assigned task(s).
 time log:
 
 Tasks:
-- setup react env to render frontend
+- setup react env to render frontend: 30 min
 - read up on react
 - postgres
 - rendering a webpage within the app for something like a gamepidgeon feature
