@@ -1,0 +1,13 @@
++12 A time log of what you worked on for the project, which will be included in your final report 
+to Dr. Emrich. We expect roughly >= 4 hrs of work in addition to the 1 hours in lab (5 total)
++4 Evidence of a repository and code that you have checked in that matches 
+at least one of your assigned task(s). 
++4 A rubric and short report on how this challenge went. 
+
+time log:
+
+Tasks:
+- setup react env to render frontend
+- read up on react
+- postgres
+- rendering a webpage within the app for something like a gamepidgeon feature
