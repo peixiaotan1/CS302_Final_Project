@@ -5,10 +5,8 @@ at least one of your assigned task(s).
 +4 A rubric and short report on how this challenge went. 
 
 time log:
-
-Tasks:
 - setup react env to render frontend: 30 min
-- read up on react: 1.5 hrs [w3's react intro]
+- read up on react: 2 hrs [w3's react intro]
 - postgres: 1 hr [https://dev.to/bnevilleoneill/getting-started-with-postgres-in-your-react-app-4nbn]
   - to interact with postgres we will host this on a server, and the app can make requests using the user id
   - will have to setup a login/create user form this can then limit user access in postgres and function as an identifier on the front end
@@ -22,4 +20,17 @@ const pool = new Pool({
   port: 5432,
 });
 '''
-- rendering a webpage within the app for something like a gamepidgeon feature
+- rendering a webpage within the app for something like a gamepidgeon feature: 30 min 
+  - ' <div> 
+    <object type="text/html" data="http://validator.w3.org/" width="800px" height="600px" style="overflow:auto;border:5px ridge blue">
+    </object>
+ </div>
+'
+https://stackoverflow.com/questions/18145273/how-to-load-an-external-webpage-into-a-div-of-a-html-page
+
+Tasks:
+- develop postgres implemenation
+- develop implemntation for gp like apps
+
+How this went:
+Overall I enjoyed figuring my way through the react js world, particularly getting my partner's code running and finding where I would make modifications in the future. I don't really react itself since it's a language ontop of js and that is already a terrible experience, that being said I am hopeful that we can at the very least get a working app done. 
