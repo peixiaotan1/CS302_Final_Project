@@ -8,6 +8,6 @@ time log:
 
 Tasks:
 - setup react env to render frontend: 30 min
-- read up on react
+- read up on react: 1.5 hrs
 - postgres
 - rendering a webpage within the app for something like a gamepidgeon feature
