@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Messaging App</title>
+</head>
+<body>
+    <h1>Messaging App</h1>
+    <div id="messages"></div>
+    <input type="text" id="textBox" placeholder="Type your message...">
+    <button id="sendBtn">Send</button>
+
+    <script>
+        // This link is not persistent!!, with ngrok free tier its a new link everytime we forward the port
+        const socket = new WebSocket('wss://5dba-174-177-46-187.ngrok-free.app');
+
+        socket.onopen = function() {
+            console.log('Connected to the server');
+        };
+
+        socket.onmessage = function(event) {
+            const msg = document.createElement('p');
+            msg.textContent = event.data;
+            document.getElementById('messages').appendChild(msg);
+        };
+
+        document.getElementById('sendBtn').onclick = function() {
+            const message = document.getElementById('textBox').value;
+            socket.send(message);
+        };
+    </script>
+</body>
+</html>

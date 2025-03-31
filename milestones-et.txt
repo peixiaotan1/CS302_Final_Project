@@ -1,0 +1,18 @@
+Get a react app running (5pts): Done
+Read up on websockets and research possible soltuions (5pts): Done
+Figure out how to setup a server (15pts): Done
+Get 2 pcs to send messages to the server (15pts): Done
+
+Time Log:
+Researching React and getting app running (1 hour)
+Researching websockets (30mins)
+Setting up a server (2 hours)
+Get 2 pcs to send messages to the server (2 hour)
+
+Report:
+I never really liked doing networking stuff, but since thats a big part of this project I better start getting used to it.
+But I love cpp more than I love js, so our group decision to use cpp in the backend is making the process smoother so far.
+I got a barebones server running and tested for 2 users, I'm sure there'll be some tinkering for more but for now it looks good.
+
+Rubric:
+40/40
