@@ -6,8 +6,12 @@ Time log:
   Edited and polished the UI and details            (2 hours)
   Played and Tested on the backend                  (5 hours)
   Researched implementation with CPP to frontend    (2 hours)
-  
 
+-Elias Tessema
+  Researched services to host the site's server     (2 hours)
+  Making plans on how to organize backend           (1 hour)
+
+  Wasn't able to do much this past week because of project 4 + travelling for club sport
 
 
 Report:
