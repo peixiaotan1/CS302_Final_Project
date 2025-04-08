@@ -1,12 +1,20 @@
 Time log:
 -Xiaopei Tan: 
-
-
-
-
-
-
+  Edited and polished the UI and details            (2 hours)
+  Played and Tested on the backend                  (5 hours)
+  Researched implementation with CPP to frontend    (2 hours)
+  
 
 
 
 Report:
+Progress since the last report. Implemented the backend with WebSocket functionality using C++.
+Developed the frontend UI using React.
+Held team discussions and planning sessions focused on database structure and design (PostgreSQL).
+Conducted research on integrating the backend, frontend, and database components.
+
+Plans for the Next Few Weeks:
+Finalize and integrate all components of the web app.
+Conduct testing and debugging across modules.
+Polish the UI and ensure real-time features function as intended.
+Prepare for project completion and final presentation/demo.
