@@ -4,7 +4,7 @@ Progress_report_#1
 Time log:
 -Xiaopei Tan: 
   Edited and polished the UI and details            (2 hours)
-  Played and Tested on the backend                  (5 hours)
+  Played and Tested on the backend                  (2 hours)
   Researched implementation with CPP to frontend    (2 hours)
 
 -Elias Tessema
@@ -14,8 +14,8 @@ Time log:
   Wasn't able to do much this past week because of project 4 + travelling for club sport
 
 -Ian Henson:
-  docker setup, config, and sharing                 (3hours)
-  begin postrges-cpp port for server backend        (2hours) 
+  docker setup, config, and sharing                 (3 hours)
+  begin postrges-cpp port for server backend        (2 hours) 
 
 
 Report:
