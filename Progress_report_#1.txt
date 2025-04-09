@@ -13,9 +13,13 @@ Time log:
 
   Wasn't able to do much this past week because of project 4 + travelling for club sport
 
+-Ian Henson:
+  docker setup, config, and sharing                 (3hours)
+  begin postrges-cpp port for server backend        (2hours) 
+
 
 Report:
-Progress since the last report. Implemented the backend with WebSocket functionality using C++.
+Progress since the last report. Implemented the backend with WebSocket functionality using C++. Began postgres-cpp communication.
 Developed the frontend UI using React.
 Held team discussions and planning sessions focused on database structure and design (PostgreSQL).
 Conducted research on integrating the backend, frontend, and database components.
