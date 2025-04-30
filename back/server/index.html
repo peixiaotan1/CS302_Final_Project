@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Messaging App</title>
+</head>
+<body>
+    <script>
+        const socket = new WebSocket('wss://e997-174-177-46-187.ngrok-free.app');
+
+        let pingInterval;
+        let currentUser;
+        let currentRoomName
+        let tempUser;
+
+        function startPing(){
+            pingInterval = setInterval(() => {
+                if (socket.readyState === WebSocket.OPEN){
+                    socket.send('9');
+                }
+            }, 30000);
+        }
+
+        function stopPing(){
+            clearInterval(pingInterval);
+        }
+
+        socket.onopen = function(){
+            console.log('Connected to the server');
+            startPing();
+        };
+
+        socket.onclose = function(){
+            console.log('Disconnected from the server');
+            stopPing();
+        };
+
+        let pendingAction = null;
+
+        socket.onmessage = function(event){
+            const data = event.data.trim();
+            console.log("Received:", data);
+
+            if (pendingAction === "login"){
+                if (data === "0"){
+                    currentUser = tempUser;
+                    console.log("Login successful!");
+                    showPage('convos-page');
+                    loadRooms();
+                } else if (data === "1"){
+                    console.error("Login failed!");
+                    alert("Login failed. Please try again.");
+                }
+                pendingAction = null;
+
+            } else if (pendingAction === "signup"){
+                if (data === "0"){
+                    currentUser = tempUser;
+                    console.log("Signup successful!");
+                    showPage('convos-page');
+                    loadRooms();
+                } else if (data === "1"){
+                    console.error("Signup failed!");
+                    alert("Signup failed. Please try a different username.");
+                }
+                pendingAction = null;
+
+            } else if (pendingAction === "createRoom"){
+                currentRoomName = data;
+                pendingAction = null;
+                enterRoom(currentRoomName);
+                pendingAction = null;
+
+            } else if (pendingAction === "enteringRoom"){
+                const mess = JSON.parse(event.data.trim());
+                const chats = mess.chats;
+                const chatContainer = document.getElementById("messages");
+
+                for (const chat of chats){
+                    if (!chat.user || !chat.message || !chat.timestamp){
+                        alert("Invalid chat object:");
+                        continue;
+                    }
+
+                    const chatDiv = document.createElement("div");
+                    chatDiv.className = "chat-message";
+
+                    const userSpan = document.createElement("span");
+                    userSpan.className = "chat-user";
+                    userSpan.textContent = chat.user + ": ";
+
+                    const messageSpan = document.createElement("span");
+                    messageSpan.className = "chat-text";
+                    messageSpan.textContent = chat.message;
+
+                    const timeSpan = document.createElement("span");
+                    timeSpan.className = "chat-time";
+                    timeSpan.textContent = " (" + chat.timestamp + ")";
+
+                    chatDiv.appendChild(userSpan);
+                    chatDiv.appendChild(messageSpan);
+                    chatDiv.appendChild(timeSpan);
+
+                    chatContainer.appendChild(chatDiv);
+
+                }
+                pendingAction = null;
+            } else if (pendingAction === "fetchRooms"){
+                const response = JSON.parse(data);
+                const rooms = response.rooms;
+
+                const roomList = document.getElementById('room-list');
+                roomList.innerHTML = '';
+
+                rooms.forEach(room => {
+                    const newRoom = document.createElement('li');
+                    newRoom.innerHTML = `<a href="#" onclick="enterRoom('${room}')">${room}</a>`;
+                    roomList.appendChild(newRoom);
+                });
+
+                pendingAction = null;
+            } else {
+                const parsed = JSON.parse(event.data);
+                if (parsed.type === "new_message"){
+                    displayNewMessage(parsed.user, parsed.message, parsed.timestamp);
+                }
+            }
+        };
+
+        function handleLogin(){
+            const username = document.getElementById('login-username').value.trim();
+            const password = document.getElementById('login-password').value.trim();
+
+            tempUser = username;
+            const message = `1\n${username}\n${password}`;
+            socket.send(message);
+            pendingAction = "login";
+        }
+
+        function handleSignup(){
+            const username = document.getElementById('signup-username').value.trim();
+            const password = document.getElementById('signup-password').value.trim();
+
+            tempUser = username;
+            const message = `0\n${username}\n${password}`;
+            socket.send(message);
+            pendingAction = "signup";
+        }
+
+        function createRoom(){
+                socket.send(`2\n${currentUser}`);
+                pendingAction = "createRoom";
+        }
+
+        function enterRoom(roomName){
+            const chatContainer = document.getElementById("messages");
+            chatContainer.innerHTML = '';
+            currentRoomName = roomName;
+
+            showPage('texting-page');
+            socket.send(`5\n${roomName}`);
+            socket.send(`4\n${roomName}`);
+            pendingAction = "enteringRoom";
+        }
+
+        function sendMessage(){
+            const textBox = document.getElementById('textBox');
+            const message = textBox.value;
+            if (message.trim() !== '' && currentRoomName){
+                socket.send(`6\n${currentUser}\n${message}\n${currentRoomName}`);
+                textBox.value = '';
+            }
+        }
+
+        function addUserToRoom(){
+            if (currentRoomName){
+                const userToAdd = prompt("Enter the username to add to this room:");
+                if (userToAdd && userToAdd.trim() !== ''){
+                    socket.send(`3\n${currentRoomName}\n${userToAdd}`);
+                    console.log(`Adding user ${userToAdd} to room ${currentRoomName}`);
+                }
+            } else {
+                alert("You need to be in a room first!");
+            }
+        }
+
+        function loadRooms(){
+            const roomList = document.getElementById('room-list');
+            roomList.innerHTML = '';
+
+            socket.send(`7\n${currentUser}`);
+            pendingAction = "fetchRooms";
+            console.log("loaddinnn rooms");
+        }
+        
+        function showPage(pageId){
+            document.querySelectorAll('.page').forEach(page => {
+                page.style.display = 'none';
+            });
+            document.getElementById(pageId).style.display = 'block';
+
+            if(pageId === "convos-page"){
+                loadRooms();
+            }
+        }
+
+
+        function displayNewMessage(user, message, timestamp){
+            const chatContainer = document.getElementById("messages");
+            
+            const chatDiv = document.createElement("div");
+            chatDiv.className = "chat-message";
+
+            const userSpan = document.createElement("span");
+            userSpan.className = "chat-user";
+            userSpan.textContent = user + ": ";
+
+            const messageSpan = document.createElement("span");
+            messageSpan.className = "chat-text";
+            messageSpan.textContent = message;
+
+            const timeSpan = document.createElement("span");
+            timeSpan.className = "chat-time";
+            timeSpan.textContent = " (" + timestamp + ")";
+
+            chatDiv.appendChild(userSpan);
+            chatDiv.appendChild(messageSpan);
+            chatDiv.appendChild(timeSpan);
+
+            chatContainer.appendChild(chatDiv);
+
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        loadRooms();
+
+    </script>
+
+    <div id="login-page" class="page">
+        <h1>Login</h1>
+        <form onsubmit="event.preventDefault(); handleLogin();">
+            <label for="login-username">Username:</label><br>
+            <input type="text" id="login-username" required><br><br>
+
+            <label for="login-password">Password:</label><br>
+            <input type="password" id="login-password" required><br><br>
+
+            <button type="submit">Log In</button>
+        </form>
+
+        <p>Don't have an account? <a href="#" onclick="showPage('signup-page')">Sign up here</a>.</p>
+    </div>
+
+
+    <div id="signup-page" class="page" style="display: none;">
+        <h1>Sign Up</h1>
+        <form onsubmit="event.preventDefault(); handleSignup();">
+            <label for="signup-username">Username:</label><br>
+            <input type="text" id="signup-username" required><br><br>
+
+            <label for="signup-password">Password:</label><br>
+            <input type="password" id="signup-password" required><br><br>
+
+            <button type="submit">Sign Up</button>
+        </form>
+
+        <p>Already have an account? <a href="#" onclick="showPage('login-page')">Log in here</a>.</p>
+    </div>
+
+    <div id="convos-page" class="page" style="display: none;">
+        <h1>Conversations</h1>
+
+        <ul id="room-list">
+        </ul>
+
+        <button onclick="createRoom()">Create New Room</button>
+
+        <p><a href="#" onclick="showPage('login-page')">Log out</a></p>
+    </div>
+
+
+
+    <div id="texting-page" class="page" style="display: none;">
+        <h1>Chat</h1>
+        <div id="messages" style="border: 1px solid #000; height: 300px; overflow-y: scroll; padding: 10px;">
+        </div>
+
+        <input type="text" id="textBox" placeholder="Type your message..." style="width: 80%;">
+        <button onclick="sendMessage()">Send</button>
+
+        <button onclick="addUserToRoom()">Add User to Room</button>
+
+        <p><a href="#" onclick="showPage('convos-page')">Back to Conversations</a></p>
+    </div>
+
+</body>
+</html>
