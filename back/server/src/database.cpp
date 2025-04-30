@@ -1,0 +1,166 @@
+#include "database.h"
+#include <random>
+
+Database::Database() : con("dbname=postgres user=postgres password=admin host=localhost port=5432")
+{
+    try {
+        if (con.is_open()){
+            std::cout << "Connected to " << con.dbname() << "\n";
+            pqxx::work tx(con);
+            
+            // Create users table
+            tx.exec(R"(
+                CREATE TABLE IF NOT EXISTS users (
+                    username TEXT PRIMARY KEY,
+                    password TEXT NOT NULL,
+                    rooms TEXT[]
+                )
+            )");
+            
+            // Create rooms table
+            tx.exec(R"(
+                CREATE TABLE IF NOT EXISTS rooms (
+                    roomname TEXT,
+                    username TEXT,
+                    message TEXT,
+                    datetime TIMESTAMPTZ DEFAULT NOW()
+                )
+            )");
+            
+            // Create usersinrooms table
+            tx.exec(R"(
+                CREATE TABLE IF NOT EXISTS usersinrooms (
+                    username TEXT NOT NULL,
+                    roomname TEXT NOT NULL,
+                    PRIMARY KEY (username, roomname)
+                )
+            )");
+            
+            tx.commit();
+        } else {
+            std::cerr << "Can't open database\n";
+        }
+    } catch (const std::exception& e){
+        std::cerr << "Error: " << e.what() << "\n";
+        exit(1);
+    }
+}
+
+bool Database::userExists(pqxx::work& tx, std::string username){
+    auto result = tx.exec("SELECT 1 FROM users WHERE username = '" + tx.esc(username) + "' LIMIT 1");
+    return !result.empty();
+}
+
+bool Database::loginUser(pqxx::work& tx, std::string username, std::string password){
+    pqxx::result r = tx.exec(
+        "SELECT 1 FROM users WHERE username = '" + tx.esc(username) + "' AND password = '" + tx.esc(password) + "' LIMIT 1"
+    );
+    return !r.empty();
+}
+
+bool Database::createUser(pqxx::work& tx, std::string username, std::string password){
+    if (!userExists(tx, username)){
+        tx.exec("INSERT INTO users (username, password, rooms) VALUES ('" + tx.esc(username) + "', '" + tx.esc(password) + "', '{}')");
+        return true;
+    }
+    return false;
+}
+
+std::string Database::addChatToRoom(pqxx::work& tx, std::string room, std::string username, std::string message){
+    pqxx::result r = tx.exec(
+        "INSERT INTO rooms (roomname, username, message, datetime) VALUES (" +
+        tx.quote(room) + ", " +
+        tx.quote(username) + ", " +
+        tx.quote(message) + ", " +
+        "NOW()" +
+        ") RETURNING datetime"
+    );
+
+    return r[0][0].c_str();
+}
+
+std::string Database::generateRandomRoomName(){
+    const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    std::random_device rd;
+    std::mt19937 gen(rd());
+    std::uniform_int_distribution<> dist(0, chars.size() - 1);
+
+    std::string roomName;
+    for (int i = 0; i < 10; ++i){
+        roomName += chars[dist(gen)];
+    }
+    return roomName;
+}
+
+std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersToAdd){
+    std::string name;
+
+    do {
+        name = generateRandomRoomName();
+    } while (!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty());
+
+    for (const auto& user : usersToAdd){
+        addUserToRoom(tx, name, user);
+    }
+
+    return name;
+}
+
+void Database::addUserToRoom(pqxx::work& tx, std::string roomName, std::string userToAdd){
+
+    tx.exec(
+        "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(roomName) + "') "
+        "WHERE username = '" + tx.esc(userToAdd) + "'"
+    );
+
+    tx.exec(
+        "INSERT INTO usersinrooms (username, roomname) VALUES (" +
+        tx.quote(userToAdd) + ", " + tx.quote(roomName) +
+        ") ON CONFLICT DO NOTHING"
+    );
+}
+
+void Database::dumpTable(pqxx::work& tx, const std::string& table){
+    pqxx::result r = tx.exec("SELECT * FROM " + tx.quote_name(table));
+
+    std::cout << "Dumping table: " << table << "\n";
+    for (const auto& row : r){
+        for (const auto& field : row){
+            std::cout << field.c_str() << " ";
+        }
+        std::cout << "\n";
+    }
+    std::cout << "--------------------------\n";
+}
+
+std::vector<nlohmann::json> Database::loadRoom(pqxx::work& tx, const std::string& roomName){
+    std::vector<nlohmann::json> messages;
+
+    pqxx::result r = tx.exec(
+        "SELECT username, message, datetime FROM rooms WHERE roomname = " + tx.quote(roomName) + " ORDER BY datetime ASC"
+    );
+
+    for (const auto& row : r){
+        nlohmann::json msg;
+        msg["user"] = row["username"].c_str();
+        msg["message"] = row["message"].c_str();
+        msg["timestamp"] = row["datetime"].c_str();
+        messages.push_back(msg);
+    }
+
+    return messages;
+}
+
+std::vector<std::string> Database::getRoomNames(pqxx::work& tx, const std::string& username){
+    std::vector<std::string> rooms;
+
+    pqxx::result r = tx.exec(
+        "SELECT roomname FROM usersinrooms WHERE username = " + tx.quote(username)
+    );
+
+    for (const auto& row : r){
+        rooms.push_back(row["roomname"].c_str());
+    }
+
+    return rooms;
+}
