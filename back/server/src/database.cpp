@@ -75,6 +75,20 @@ bool Database::createUser(pqxx::work& tx, std::string username, std::string pass
     return false;
 }
 
+bool Database::userInRoom(pqxx::work& tx, std::string room, std::string user){
+    auto result = tx.exec("SELECT 1 FROM usersinrooms WHERE username = '" + tx.esc(serialize(user)) + "' AND roomname = '" + serialize(room) + "' LIMIT 1");
+    return result.empty();
+}
+
+bool Database::removeUserFromRoom(pqxx::work& tx, std::string room, std::string user){
+
+    if(Database::userInRoom(tx, room, user)){
+        tx.exec("DELETE FROM usersinrooms WHERE username = '" + serialize(user) + "' AND roomname = '" + serialize(room) + "'");
+        return true;
+    }
+    return false;
+}
+
 std::string Database::addChatToRoom(pqxx::work& tx, std::string room, std::string username, std::string message){
     pqxx::result r = tx.exec(
         "INSERT INTO rooms (roomname, username, message, datetime) VALUES (" +
