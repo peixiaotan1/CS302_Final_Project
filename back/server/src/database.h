@@ -15,6 +15,8 @@ public:
     bool userExists(pqxx::work &tx, std::string username);
     bool loginUser(pqxx::work &tx, std::string username, std::string password);
     bool createUser(pqxx::work &tx, std::string username, std::string password);
+    bool userInRoom(pqxx::work& tx, std::string room, std::string user);
+    bool removeUserFromRoom(pqxx::work& tx, std::string room, std::string user);
 
     std::string addChatToRoom(pqxx::work &tx, std::string room, std::string username, std::string msg);
     std::string createRoom(pqxx::work &tx, std::vector<std::string> usersToAdd);
