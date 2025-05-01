@@ -4,6 +4,7 @@
 #include <ctime>
 #include <chrono>
 
+// Setup server overhead and db
 MyServer::MyServer() : m_server(){
     m_server.init_asio();
     m_server.clear_access_channels(websocketpp::log::alevel::all);
@@ -15,7 +16,7 @@ MyServer::MyServer() : m_server(){
 }
 
 void MyServer::run(uint16_t port){
-    m_server.set_reuse_addr(true);
+    m_server.set_reuse_addr(true);  // Saves some developing errors claiming the port is still being used
     m_server.listen(port);
     m_server.start_accept();
     m_server.run();
@@ -26,6 +27,7 @@ void MyServer::on_open(websocketpp::connection_hdl hdl){
 }
 
 void MyServer::on_close(websocketpp::connection_hdl hdl){
+    // They won't care about seeing it instantly since they logged off!
     for (auto& [room, users] : room_users){
         users.erase(hdl);
     }
@@ -40,6 +42,16 @@ void MyServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr m
     std::string line, input;
     char code;
 
+
+    //TODO
+    /* A little silly but this was the first thing I thought of, lets say the frontend wants something
+       for example to login a user, I set up a list of codes that you can see below where the frontend will send
+       a message like this:
+       0
+       username
+       password
+       and we'll take that first code and send the info to th eright function, super scuffed and we can fix it if desired
+    */
     std::getline(stream, line);
     code = line[0];
 
@@ -76,33 +88,40 @@ void MyServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr m
     } 
 }
 
+// Some functions like the below 2 will send back a 0 or 1 since we just want boolean answers
+
+// Return 0 if that username doesnt already exists, 1 if otherwise
 std::string MyServer::create_user(std::string userPass){
-    std::string username, password, result;
+    std::string username, password, hashedPass, result;
     std::istringstream stream(userPass);
 
     std::getline(stream, username);
     std::getline(stream, password);
 
+    hashedPass = hash(password);
+
     pqxx::work tx(db->con);
 
-    result = db->createUser(tx, username, password) ? "0" : "1";
+    result = db->createUser(tx, username, hashedPass) ? "0" : "1";
     db->dumpTable(tx, "users");
     tx.commit();
 
     return result;
-
 }
 
+// Return 0 if username and password matches, else 1
 std::string MyServer::login_user(std::string userPass){
-    std::string username, password, result;
+    std::string username, password, hashedPass, result;
     std::istringstream stream(userPass);
 
     std::getline(stream, username);
     std::getline(stream, password);
 
+    hashedPass = hash(password);
+
     pqxx::work tx(db->con);
 
-    if (db->loginUser(tx, username, password)){
+    if (db->loginUser(tx, username, hashedPass)){
         result = "0";
     } else {
         result = "1";
@@ -112,6 +131,7 @@ std::string MyServer::login_user(std::string userPass){
     return result;
 }
 
+// Takes a list of usernames and builds a brand new room, it will return the room id (for now called room name)
 std::string MyServer::build_room(std::string usersIn){
     std::vector<std::string> users;
 
@@ -131,6 +151,7 @@ std::string MyServer::build_room(std::string usersIn){
     return name;
 }
 
+// Gets the ids of all the rooms a user is part of
 std::string MyServer::get_room_list(std::string user){
     pqxx::work tx(db->con);
     std::vector<std::string> rooms = db->getRoomNames(tx, user);
@@ -158,7 +179,7 @@ void MyServer::add_to_room(std::string nameAndUser){
     tx.commit();
 }
 
-
+// Returns all the messages in a room, check db function for json structure
 std::string MyServer::load_room_chats(std::string room){
     pqxx::work tx(db->con);
     std::vector<nlohmann::json> chats = db->loadRoom(tx, room);
@@ -171,9 +192,12 @@ std::string MyServer::load_room_chats(std::string room){
     return payload;
 }
 
+// Add connection to the map
 void MyServer::enter_room(std::string room, websocketpp::connection_hdl hdl){
     room_users[room].insert(hdl);
 }
+
+//TODO: An exit_room function that removes the user from the map instead of only when they close, which is dumb
 
 void MyServer::add_chat(std::string userMsgRoom){
     std::string user, msg, room;
@@ -190,7 +214,7 @@ void MyServer::add_chat(std::string userMsgRoom){
     j["type"] = "new_message";
     j["user"] = user;
     j["message"] = msg;
-    j["timestamp"] = time;  // get current time as string
+    j["timestamp"] = time;
 
     std::string payload = j.dump();
 
@@ -201,4 +225,20 @@ void MyServer::add_chat(std::string userMsgRoom){
 
     db->dumpTable(tx, "rooms");
     tx.commit();
+}
+
+std::string MyServer::hash(std::string word){
+    unsigned char hash[SHA256_DIGEST_LENGTH];
+
+    SHA256_CTX sha256;
+    SHA256_Init(&sha256);
+    SHA256_Update(&sha256, word.c_str(), word.size());
+    SHA256_Final(hash, &sha256);
+  
+    std::stringstream ss;
+  
+    for(int i = 0; i < SHA256_DIGEST_LENGTH; i++){
+      ss << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>( hash[i] );
+    }
+    return ss.str();
 }

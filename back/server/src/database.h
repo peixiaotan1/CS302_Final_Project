@@ -22,7 +22,10 @@ public:
     std::vector<nlohmann::json> loadRoom(pqxx::work& tx, const std::string& roomName);
     std::vector<std::string> getRoomNames(pqxx::work& tx, const std::string& user);
 
+    // Generates a random code so each room is unique even if they have the same name (if/when we add room names)
     std::string generateRandomRoomName();
+
+    // Just to view a table
     void dumpTable(pqxx::work& tx, const std::string& table);
 
     pqxx::connection con;
