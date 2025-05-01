@@ -1,5 +1,6 @@
 #include "database.h"
 #include <random>
+#include <string>
 
 std::string serialize(std::string x){
     std::string y = x;//remove & and '
@@ -55,20 +56,20 @@ Database::Database() : con("dbname=postgres user=postgres password=admin host=lo
 }
 
 bool Database::userExists(pqxx::work& tx, std::string username){
-    auto result = tx.exec("SELECT 1 FROM users WHERE username = '" + tx.esc(username) + "' LIMIT 1");
+    auto result = tx.exec("SELECT 1 FROM users WHERE username = '" + tx.esc(serialize(username)) + "' LIMIT 1");
     return !result.empty();
 }
 
 bool Database::loginUser(pqxx::work& tx, std::string username, std::string password){
     pqxx::result r = tx.exec(
-        "SELECT 1 FROM users WHERE username = '" + tx.esc(username) + "' AND password = '" + tx.esc(password) + "' LIMIT 1"
+        "SELECT 1 FROM users WHERE username = '" + tx.esc(serialize(username)) + "' AND password = '" + tx.esc(serialize(password)) + "' LIMIT 1"
     );
     return !r.empty();
 }
 
 bool Database::createUser(pqxx::work& tx, std::string username, std::string password){
     if (!userExists(tx, username)){
-        tx.exec("INSERT INTO users (username, password, rooms) VALUES ('" + tx.esc(username) + "', '" + tx.esc(password) + "', '{}')");
+        tx.exec("INSERT INTO users (username, password, rooms) VALUES ('" + tx.esc(serialize(username)) + "', '" + tx.esc(serialize(password)) + "', '{}')");
         return true;
     }
     return false;
@@ -77,9 +78,9 @@ bool Database::createUser(pqxx::work& tx, std::string username, std::string pass
 std::string Database::addChatToRoom(pqxx::work& tx, std::string room, std::string username, std::string message){
     pqxx::result r = tx.exec(
         "INSERT INTO rooms (roomname, username, message, datetime) VALUES (" +
-        tx.quote(room) + ", " +
-        tx.quote(username) + ", " +
-        tx.quote(message) + ", " +
+        tx.quote(serialize(room)) + ", " +
+        tx.quote(serialize(username)) + ", " +
+        tx.quote(serialize(message)) + ", " +
         "NOW()" +
         ") RETURNING datetime"
     );
@@ -117,19 +118,19 @@ std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersT
 void Database::addUserToRoom(pqxx::work& tx, std::string roomName, std::string userToAdd){
 
     tx.exec(
-        "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(roomName) + "') "
-        "WHERE username = '" + tx.esc(userToAdd) + "'"
+        "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(serialize(roomName)) + "') "
+        "WHERE username = '" + tx.esc(serialize(userToAdd)) + "'"
     );
 
     tx.exec(
         "INSERT INTO usersinrooms (username, roomname) VALUES (" +
-        tx.quote(userToAdd) + ", " + tx.quote(roomName) +
+        tx.quote(serialize(userToAdd)) + ", " + tx.quote(serialize(roomName)) +
         ") ON CONFLICT DO NOTHING"
     );
 }
 
 void Database::dumpTable(pqxx::work& tx, const std::string& table){
-    pqxx::result r = tx.exec("SELECT * FROM " + tx.quote_name(table));
+    pqxx::result r = tx.exec("SELECT * FROM " + tx.quote_name(serialize(table)));
 
     std::cout << "Dumping table: " << table << "\n";
     for (const auto& row : r){
@@ -145,7 +146,7 @@ std::vector<nlohmann::json> Database::loadRoom(pqxx::work& tx, const std::string
     std::vector<nlohmann::json> messages;
 
     pqxx::result r = tx.exec(
-        "SELECT username, message, datetime FROM rooms WHERE roomname = " + tx.quote(roomName) + " ORDER BY datetime ASC"
+        "SELECT username, message, datetime FROM rooms WHERE roomname = " + tx.quote(serialize(roomName)) + " ORDER BY datetime ASC"
     );
 
     for (const auto& row : r){
@@ -163,7 +164,7 @@ std::vector<std::string> Database::getRoomNames(pqxx::work& tx, const std::strin
     std::vector<std::string> rooms;
 
     pqxx::result r = tx.exec(
-        "SELECT roomname FROM usersinrooms WHERE username = " + tx.quote(username)
+        "SELECT roomname FROM usersinrooms WHERE username = " + tx.quote(serialize(username))
     );
 
     for (const auto& row : r){
