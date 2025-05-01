@@ -1,6 +1,14 @@
 #include "database.h"
 #include <random>
 
+std::string serialize(std::string x){
+    std::string y = x;//remove & and '
+    if(y.find("&") != std::string::npos) y.replace(y.find("&"), 1,"");
+    if(y.find("'") != std::string::npos) y.replace(y.find("'"), 1,"");
+
+    return y;
+}
+
 Database::Database() : con("dbname=postgres user=postgres password=admin host=localhost port=5432")
 {
     try {
