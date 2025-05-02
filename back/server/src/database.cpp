@@ -150,6 +150,17 @@ void Database::addUserToRoom(pqxx::work& tx, std::string roomName, std::string u
     );
 }
 
+bool Database::createDM(pqxx::work& tx, std::string userA, std::string userB){
+    std::string name = userA+userB;
+
+    if(!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty()) return false;
+    if(!Database::userExists(tx, userA) or !Database::userExists(tx, userB)) return false;
+
+    Database::createRoom(tx, {userA, userB},name);
+
+    return true;
+}
+
 void Database::dumpTable(pqxx::work& tx, const std::string& table){
     pqxx::result r = tx.exec("SELECT * FROM " + tx.quote_name(serialize(table)));
 
@@ -194,3 +205,4 @@ std::vector<std::string> Database::getRoomNames(pqxx::work& tx, const std::strin
 
     return rooms;
 }
+
