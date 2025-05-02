@@ -19,7 +19,7 @@ public:
     bool removeUserFromRoom(pqxx::work& tx, std::string room, std::string user);
 
     std::string addChatToRoom(pqxx::work &tx, std::string room, std::string username, std::string msg);
-    std::string createRoom(pqxx::work &tx, std::vector<std::string> usersToAdd);
+    std::string createRoom(pqxx::work &tx, std::vector<std::string> usersToAdd, std::string name);
     void addUserToRoom(pqxx::work& tx, std::string roomName, std::string userToAdd);
     std::vector<nlohmann::json> loadRoom(pqxx::work& tx, const std::string& roomName);
     std::vector<std::string> getRoomNames(pqxx::work& tx, const std::string& user);
