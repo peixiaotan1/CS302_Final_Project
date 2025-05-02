@@ -115,13 +115,20 @@ std::string Database::generateRandomRoomName(){
     return roomName;
 }
 
-std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersToAdd){
-    std::string name;
+std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersToAdd, std::string name = ""){
+    //added default value, if roomname isn't passed
+    if(!name.size()){
+        do {
+            name = generateRandomRoomName();
+        } while (!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty());
+    }
+    else{
+        if(tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty()){
+            return "false";
+        }
+    }
 
-    do {
-        name = generateRandomRoomName();
-    } while (!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty());
-
+    
     for (const auto& user : usersToAdd){
         addUserToRoom(tx, name, user);
     }
