@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import UserAvatar from './UserAvatar';
 
-const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoomId }) => {
+const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoomId, currentRoomName }) => {
   const [showDropdown, setShowDropdown] = useState(false);
   
   const toggleDropdown = () => {
@@ -11,13 +11,6 @@ const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoo
   const handleLogout = () => {
     setShowDropdown(false);
     onLogout();
-  };
-  
-  // Room names based on room ID - in a real app, this would come from the backend
-  const roomNames = {
-    room1: 'General Discussion',
-    room2: 'Tech Talk',
-    room3: 'Random Chat'
   };
   
   return (
@@ -40,7 +33,7 @@ const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoo
           </svg>
           <div>
             <h1 className="text-xl font-semibold">
-              {showBackButton && currentRoomId ? roomNames[currentRoomId] || 'Chat Room' : 'CS302 Group Chat'}
+              {showBackButton ? currentRoomName || 'Chat Room' : 'CS302 Group Chat'}
             </h1>
             {showBackButton && currentRoomId && (
               <p className="text-xs text-blue-200">Room ID: {currentRoomId}</p>

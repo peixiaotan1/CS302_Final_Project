@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 
-const Rooms = ({ currentUser, onEnterRoom, socket }) => {
+const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
   const [rooms, setRooms] = useState([]);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showJoinModal, setShowJoinModal] = useState(false);
@@ -26,6 +26,13 @@ const Rooms = ({ currentUser, onEnterRoom, socket }) => {
     };
     trySend();
   }, [socket, currentUser]);
+
+  // Update parent component when rooms change
+  useEffect(() => {
+    if (onRoomsUpdate) {
+      onRoomsUpdate(rooms);
+    }
+  }, [rooms, onRoomsUpdate]);
 
   useEffect(() => {
     const handleMessage = (event) => {
@@ -75,7 +82,7 @@ const Rooms = ({ currentUser, onEnterRoom, socket }) => {
     return () => {
       socket.removeEventListener("message", handleMessage);
     };
-  }, [socket, makingNewRoom]);
+  }, [socket, makingNewRoom, rooms, newRoomName]);
 
   const handleCreateRoom = (e) => {
     e.preventDefault();
@@ -106,9 +113,9 @@ const Rooms = ({ currentUser, onEnterRoom, socket }) => {
     setRooms(rooms.filter((room) => room.id !== roomId));
   };
 
-  const enterRoom = (roomId) => {
-    // Navigate to the selected room
-    onEnterRoom(roomId);
+  const enterRoom = (roomId, roomName) => {
+    // Navigate to the selected room with its name
+    onEnterRoom(roomId, roomName);
   };
 
   return (
@@ -159,7 +166,7 @@ const Rooms = ({ currentUser, onEnterRoom, socket }) => {
                     {room.members} members
                   </p>
                   <button
-                    onClick={() => enterRoom(room.id)}
+                    onClick={() => enterRoom(room.id, room.name)}
                     className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 rounded-md text-sm"
                   >
                     Enter Room

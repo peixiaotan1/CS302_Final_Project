@@ -18,35 +18,44 @@ const MessageList = ({ messages, currentUser }) => {
       {messages.map((message) => {
         const isOwnMessage = message.sender.id === currentUser.id;
         
-        return (
-          <div 
-            key={message.id} 
-            className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
-          >
-            {!isOwnMessage && (
+        if (isOwnMessage) {
+          // Current user's message - right side
+          return (
+            <div key={message.id} className="flex justify-end mb-4">
+              <div className="max-w-xs md:max-w-md">
+                <div className="bg-blue-500 text-white p-3 rounded-lg rounded-br-none">
+                  {message.text}
+                </div>
+                <div className="text-xs text-gray-500 text-right mt-1 mr-1">
+                  {formatTime(message.timestamp)}
+                </div>
+              </div>
+              <div className="ml-2 flex-shrink-0">
+                <UserAvatar user={currentUser} />
+              </div>
+            </div>
+          );
+        } else {
+          // Other user's message - left side
+          return (
+            <div key={message.id} className="flex justify-start mb-4">
               <div className="mr-2 flex-shrink-0">
                 <UserAvatar user={message.sender} />
               </div>
-            )}
-            <div className="max-w-xs md:max-w-md space-y-1">
-              {!isOwnMessage && (
-                <div className="text-sm font-medium">{message.sender.name}</div>
-              )}
-              <div 
-                className={`px-4 py-2 rounded-lg ${
-                  isOwnMessage 
-                    ? 'bg-blue-500 text-white rounded-br-none' 
-                    : 'bg-gray-200 text-gray-800 rounded-bl-none'
-                }`}
-              >
-                <div>{message.text}</div>
-              </div>
-              <div className="text-xs text-gray-500">
-                {formatTime(message.timestamp)}
+              <div className="max-w-xs md:max-w-md">
+                <div className="text-sm font-medium">
+                  {message.sender.name}
+                </div>
+                <div className="bg-gray-200 text-gray-800 p-3 rounded-lg rounded-bl-none">
+                  {message.text}
+                </div>
+                <div className="text-xs text-gray-500 mt-1 ml-1">
+                  {formatTime(message.timestamp)}
+                </div>
               </div>
             </div>
-          </div>
-        );
+          );
+        }
       })}
       <div ref={messagesEndRef} />
     </div>

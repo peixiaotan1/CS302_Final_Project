@@ -9,6 +9,8 @@ function App({socket}) {
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('rooms'); // 'rooms' or 'chat'
   const [currentRoomId, setCurrentRoomId] = useState(null);
+  const [roomsInfo, setRoomsInfo] = useState([]); // Store room info (id and name)
+  const [currentRoomName, setCurrentRoomName] = useState('');
   
   // Check if user is already logged in (from localStorage)
   useEffect(() => {
@@ -18,39 +20,6 @@ function App({socket}) {
       setIsLoggedIn(true);
     }
   }, []);
-  
-  /* Mock data for chat messages by room
-  const [roomMessages, setRoomMessages] = useState({
-    room1: [
-      {
-        id: '1',
-        text: 'Hello everyone! Welcome to our group chat.',
-        sender: { id: '2', name: 'Jane Smith', avatar: '/api/placeholder/40/40?text=J' },
-        timestamp: new Date(Date.now() - 3600000).toISOString()
-      },
-      {
-        id: '2',
-        text: 'Hi Jane! Thanks for setting this up.',
-        sender: { id: '3', name: 'Mike Johnson', avatar: '/api/placeholder/40/40?text=M' },
-        timestamp: new Date(Date.now() - 3000000).toISOString()
-      }
-    ],
-    room2: [
-      {
-        id: '3',
-        text: 'Glad to be here! What are we discussing today?',
-        sender: { id: '4', name: 'Alex Brown', avatar: '/api/placeholder/40/40?text=A' },
-        timestamp: new Date(Date.now() - 2400000).toISOString()
-      },
-      {
-        id: '4',
-        text: 'I thought we could talk about the new project requirements.',
-        sender: { id: '2', name: 'Jane Smith', avatar: '/api/placeholder/40/40?text=J' },
-        timestamp: new Date(Date.now() - 1800000).toISOString()
-      }
-    ],
-    room3: []
-  });*/
   
   const handleLogin = (user) => {
     // Save user to localStorage for persistence
@@ -65,32 +34,27 @@ function App({socket}) {
     setIsLoggedIn(false);
     setCurrentView('rooms');
     setCurrentRoomId(null);
+    setCurrentRoomName('');
   };
   
   const handleSendMessage = (text) => {
     if (text.trim() && currentUser && currentRoomId) {
-
-      /*
-      const newMessage = {
-        id: Date.now().toString(),
-        text,
-        sender: currentUser,
-        timestamp: new Date().toISOString()
-      };
-      */
-
       socket.send(`6\n${currentUser.name}\n${text}\n${currentRoomId}`);
-      
     }
   };
   
-  const handleEnterRoom = (roomId) => {
+  const handleEnterRoom = (roomId, roomName) => {
     setCurrentRoomId(roomId);
+    setCurrentRoomName(roomName);
     setCurrentView('chat');
   };
   
   const handleBackToRooms = () => {
     setCurrentView('rooms');
+  };
+  
+  const handleRoomsUpdate = (rooms) => {
+    setRoomsInfo(rooms);
   };
   
   // If not logged in, show login screen
@@ -107,13 +71,15 @@ function App({socket}) {
         showBackButton={currentView === 'chat'}
         onBackClick={handleBackToRooms}
         currentRoomId={currentRoomId}
+        currentRoomName={currentRoomName}
       />
       <div className="flex-1">
         {currentView === 'rooms' ? (
           <Rooms 
             currentUser={currentUser.name} 
             onEnterRoom={handleEnterRoom}
-            socket={socket} 
+            socket={socket}
+            onRoomsUpdate={handleRoomsUpdate}
           />
         ) : (
           <ChatRoom 
