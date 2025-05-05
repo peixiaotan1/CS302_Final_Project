@@ -38,15 +38,17 @@ const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoo
           <svg className="w-6 h-6 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path>
           </svg>
-          <h1 className="text-xl font-semibold">Group Chat</h1>
+          <div>
+            <h1 className="text-xl font-semibold">
+              {showBackButton && currentRoomId ? roomNames[currentRoomId] || 'Chat Room' : 'CS302 Group Chat'}
+            </h1>
+            {showBackButton && currentRoomId && (
+              <p className="text-xs text-blue-200">Room ID: {currentRoomId}</p>
+            )}
+          </div>
         </div>
         
-        <div className="flex items-center space-x-4">
-          <div className="hidden md:block">
-            <div className="bg-blue-700 hover:bg-blue-800 py-1 px-3 rounded-full text-sm cursor-pointer">
-              Team Alpha
-            </div>
-          </div>
+        <div className="flex items-center">
           <div className="relative">
             <div 
               className="flex items-center cursor-pointer group"
@@ -75,14 +77,6 @@ const Navbar = ({ currentUser, onLogout, showBackButton, onBackClick, currentRoo
           </div>
         </div>
       </div>
-      
-      {/* Channel info bar - only show when in a chat room */}
-      {showBackButton && currentRoomId && (
-        <div className="p-3 border-b bg-white shadow-sm">
-          <h2 className="text-lg font-medium">{roomNames[currentRoomId] || 'Chat Room'}</h2>
-          <p className="text-sm text-gray-600">4 members, 2 online</p>
-        </div>
-      )}
     </div>
   );
 };
