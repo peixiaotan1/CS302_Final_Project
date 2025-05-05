@@ -4,8 +4,34 @@ import './index.css';
 import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
+const socket = new WebSocket('wss://4919-174-177-46-187.ngrok-free.app');
+
+let pingInterval
+
+function startPing(){
+  pingInterval = setInterval(() => {
+      if (socket.readyState === WebSocket.OPEN){
+          socket.send('ping');
+      }
+  }, 30000);
+}
+
+function stopPing(){
+  clearInterval(pingInterval);
+}
+
+socket.onopen = function(){
+  console.log('Connected to the server');
+  startPing();
+};
+
+socket.onclose = function(){
+  console.log('Disconnected from the server');
+  stopPing();
+};
+
 root.render(
   <React.StrictMode>
-    <App />
+    <App socket={socket}/>
   </React.StrictMode>
 );

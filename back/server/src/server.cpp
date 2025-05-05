@@ -132,37 +132,49 @@ std::string MyServer::login_user(std::string userPass){
 }
 
 // Takes a list of usernames and builds a brand new room, it will return the room id (for now called room name)
-std::string MyServer::build_room(std::string usersIn){
+std::string MyServer::build_room(std::string nameAndUsers){
     std::vector<std::string> users;
 
-    std::string line;
-    std::istringstream stream(usersIn);
+    std::string line, roomName;
+    std::istringstream stream(nameAndUsers);
+
+    std::getline(stream, roomName);
 
     while (std::getline(stream, line)){
         users.push_back(line);
     }
 
     pqxx::work tx(db->con);
-    std::string name = db->createRoom(tx, users);
+    std::string id = db->createRoom(tx, users, roomName);
     db->dumpTable(tx, "usersinrooms");
 
     tx.commit();
-    std::cout << "new room called " << name << "\n";
-    return name;
+    std::cout << "new room called " << roomName << "\n";
+    return id;
 }
 
 // Gets the ids of all the rooms a user is part of
-std::string MyServer::get_room_list(std::string user){
+std::string MyServer::get_room_list(std::string user) {
     pqxx::work tx(db->con);
-    std::vector<std::string> rooms = db->getRoomNames(tx, user);
+    std::map<std::string, std::string> rooms = db->getRooms(tx, user);
     tx.commit();
 
-    nlohmann::json json;
-    json["rooms"] = rooms;
+    nlohmann::json j;
+    j["type"] = "room_list";
+    j["rooms"] = nlohmann::json::array();
 
-    std::string payload = json.dump();
-    return payload;
+    for (const auto& [roomId, roomName] : rooms) {
+        j["rooms"].push_back({
+            {"id", roomId},
+            {"name", roomName},
+            {"members", 1}
+        });
+    }
+
+    return j.dump();
 }
+
+
 
 
 void MyServer::add_to_room(std::string nameAndUser){
@@ -189,6 +201,8 @@ std::string MyServer::load_room_chats(std::string room){
     j["chats"] = chats;
 
     std::string payload = j.dump();
+    std::cout << "Sending payload: " << payload << std::endl;
+
     return payload;
 }
 

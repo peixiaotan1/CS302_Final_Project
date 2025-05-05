@@ -38,7 +38,7 @@ private:
 
     std::string create_user(std::string userPass);
     std::string login_user(std::string userPass);
-    std::string build_room(std::string users);
+    std::string build_room(std::string nameAndusers);
     void add_to_room(std::string user);
     std::string get_room_list(std::string user);
 

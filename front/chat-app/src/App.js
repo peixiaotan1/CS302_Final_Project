@@ -4,7 +4,7 @@ import ChatRoom from './components/ChatRoom';
 import Login from './components/Login';
 import Rooms from './components/Rooms';
 
-function App() {
+function App({socket}) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [currentUser, setCurrentUser] = useState(null);
   const [currentView, setCurrentView] = useState('rooms'); // 'rooms' or 'chat'
@@ -19,7 +19,7 @@ function App() {
     }
   }, []);
   
-  // Mock data for chat messages by room
+  /* Mock data for chat messages by room
   const [roomMessages, setRoomMessages] = useState({
     room1: [
       {
@@ -50,7 +50,7 @@ function App() {
       }
     ],
     room3: []
-  });
+  });*/
   
   const handleLogin = (user) => {
     // Save user to localStorage for persistence
@@ -69,17 +69,18 @@ function App() {
   
   const handleSendMessage = (text) => {
     if (text.trim() && currentUser && currentRoomId) {
+
+      /*
       const newMessage = {
         id: Date.now().toString(),
         text,
         sender: currentUser,
         timestamp: new Date().toISOString()
       };
+      */
+
+      socket.send(`6\n${currentUser.name}\n${text}\n${currentRoomId}`);
       
-      setRoomMessages(prevMessages => ({
-        ...prevMessages,
-        [currentRoomId]: [...(prevMessages[currentRoomId] || []), newMessage]
-      }));
     }
   };
   
@@ -94,7 +95,7 @@ function App() {
   
   // If not logged in, show login screen
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} />;
+    return <Login onLogin={handleLogin} socket={socket}/>;
   }
   
   // If logged in, show appropriate view
@@ -110,14 +111,16 @@ function App() {
       <div className="flex-1">
         {currentView === 'rooms' ? (
           <Rooms 
-            currentUser={currentUser} 
-            onEnterRoom={handleEnterRoom} 
+            currentUser={currentUser.name} 
+            onEnterRoom={handleEnterRoom}
+            socket={socket} 
           />
         ) : (
           <ChatRoom 
-            messages={roomMessages[currentRoomId] || []} 
-            currentUser={currentUser} 
-            onSendMessage={handleSendMessage} 
+            roomId={currentRoomId}
+            currentUser={currentUser.name} 
+            onSendMessage={handleSendMessage}
+            socket={socket} 
           />
         )}
       </div>

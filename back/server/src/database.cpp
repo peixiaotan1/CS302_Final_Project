@@ -29,10 +29,18 @@ Database::Database() : con("dbname=postgres user=postgres password=admin host=lo
             // Create rooms table
             tx.exec(R"(
                 CREATE TABLE IF NOT EXISTS rooms (
-                    roomname TEXT,
+                    roomid TEXT,
                     username TEXT,
                     message TEXT,
                     datetime TIMESTAMPTZ DEFAULT NOW()
+                )
+            )");
+
+            // Rooms Ids and their names
+            tx.exec(R"(
+                CREATE TABLE IF NOT EXISTS roomnames (
+                    roomid TEXT PRIMARY KEY,
+                    roomname TEXT NOT NULL
                 )
             )");
             
@@ -40,8 +48,8 @@ Database::Database() : con("dbname=postgres user=postgres password=admin host=lo
             tx.exec(R"(
                 CREATE TABLE IF NOT EXISTS usersinrooms (
                     username TEXT NOT NULL,
-                    roomname TEXT NOT NULL,
-                    PRIMARY KEY (username, roomname)
+                    roomid TEXT NOT NULL,
+                    PRIMARY KEY (username, roomid)
                 )
             )");
             
@@ -57,6 +65,11 @@ Database::Database() : con("dbname=postgres user=postgres password=admin host=lo
 
 bool Database::userExists(pqxx::work& tx, std::string username){
     auto result = tx.exec("SELECT 1 FROM users WHERE username = '" + tx.esc(serialize(username)) + "' LIMIT 1");
+    return !result.empty();
+}
+
+bool Database::roomExists(pqxx::work& tx, const std::string roomId) {
+    auto result = tx.exec("SELECT 1 FROM rooms WHERE roomid = " + tx.quote(serialize(roomId)) + " LIMIT 1");
     return !result.empty();
 }
 
@@ -76,14 +89,14 @@ bool Database::createUser(pqxx::work& tx, std::string username, std::string pass
 }
 
 bool Database::userInRoom(pqxx::work& tx, std::string room, std::string user){
-    auto result = tx.exec("SELECT 1 FROM usersinrooms WHERE username = '" + tx.esc(serialize(user)) + "' AND roomname = '" + serialize(room) + "' LIMIT 1");
+    auto result = tx.exec("SELECT 1 FROM usersinrooms WHERE username = '" + tx.esc(serialize(user)) + "' AND roomid = '" + serialize(room) + "' LIMIT 1");
     return result.empty();
 }
 
 bool Database::removeUserFromRoom(pqxx::work& tx, std::string room, std::string user){
 
     if(Database::userInRoom(tx, room, user)){
-        tx.exec("DELETE FROM usersinrooms WHERE username = '" + serialize(user) + "' AND roomname = '" + serialize(room) + "'");
+        tx.exec("DELETE FROM usersinrooms WHERE username = '" + serialize(user) + "' AND roomid = '" + serialize(room) + "'");
         return true;
     }
     return false;
@@ -91,7 +104,7 @@ bool Database::removeUserFromRoom(pqxx::work& tx, std::string room, std::string 
 
 std::string Database::addChatToRoom(pqxx::work& tx, std::string room, std::string username, std::string message){
     pqxx::result r = tx.exec(
-        "INSERT INTO rooms (roomname, username, message, datetime) VALUES (" +
+        "INSERT INTO rooms (roomid, username, message, datetime) VALUES (" +
         tx.quote(serialize(room)) + ", " +
         tx.quote(serialize(username)) + ", " +
         tx.quote(serialize(message)) + ", " +
@@ -102,50 +115,51 @@ std::string Database::addChatToRoom(pqxx::work& tx, std::string room, std::strin
     return r[0][0].c_str();
 }
 
-std::string Database::generateRandomRoomName(){
+std::string Database::generateRandomRoomId(){
     const std::string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_int_distribution<> dist(0, chars.size() - 1);
 
-    std::string roomName;
+    std::string roomId;
     for (int i = 0; i < 10; ++i){
-        roomName += chars[dist(gen)];
+        roomId += chars[dist(gen)];
     }
-    return roomName;
+    return roomId;
 }
 
-std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersToAdd, std::string name = ""){
-    //added default value, if roomname isn't passed
-    if(!name.size()){
-        do {
-            name = generateRandomRoomName();
-        } while (!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty());
-    }
-    else{
-        if(tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty()){
-            return "false";
-        }
+
+std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersToAdd, std::string name) {
+    std::string roomId;
+    do {
+        roomId = generateRandomRoomId();
+    } while (!tx.exec("SELECT 1 FROM rooms WHERE roomid = '" + tx.esc(roomId) + "' LIMIT 1").empty());
+
+    if (name.empty()) {
+        name = roomId;
     }
 
-    
-    for (const auto& user : usersToAdd){
-        addUserToRoom(tx, name, user);
+    tx.exec("INSERT INTO roomnames (roomid, roomname) VALUES (" + 
+        tx.quote(serialize(roomId)) + ", " + tx.quote(serialize(name)) + ")");
+
+    for (const auto& user : usersToAdd) {
+        addUserToRoom(tx, roomId, user);
     }
 
-    return name;
+    return roomId;
 }
 
-void Database::addUserToRoom(pqxx::work& tx, std::string roomName, std::string userToAdd){
+
+void Database::addUserToRoom(pqxx::work& tx, std::string roomId, std::string userToAdd){
 
     tx.exec(
-        "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(serialize(roomName)) + "') "
+        "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(serialize(roomId)) + "') "
         "WHERE username = '" + tx.esc(serialize(userToAdd)) + "'"
     );
 
     tx.exec(
-        "INSERT INTO usersinrooms (username, roomname) VALUES (" +
-        tx.quote(serialize(userToAdd)) + ", " + tx.quote(serialize(roomName)) +
+        "INSERT INTO usersinrooms (username, roomid) VALUES (" +
+        tx.quote(serialize(userToAdd)) + ", " + tx.quote(serialize(roomId)) +
         ") ON CONFLICT DO NOTHING"
     );
 }
@@ -153,7 +167,7 @@ void Database::addUserToRoom(pqxx::work& tx, std::string roomName, std::string u
 bool Database::createDM(pqxx::work& tx, std::string userA, std::string userB){
     std::string name = userA+userB;
 
-    if(!tx.exec("SELECT 1 FROM rooms WHERE roomname = '" + tx.esc(name) + "' LIMIT 1").empty()) return false;
+    if(!tx.exec("SELECT 1 FROM rooms WHERE roomid = '" + tx.esc(name) + "' LIMIT 1").empty()) return false;
     if(!Database::userExists(tx, userA) or !Database::userExists(tx, userB)) return false;
 
     Database::createRoom(tx, {userA, userB},name);
@@ -174,11 +188,11 @@ void Database::dumpTable(pqxx::work& tx, const std::string& table){
     std::cout << "--------------------------\n";
 }
 
-std::vector<nlohmann::json> Database::loadRoom(pqxx::work& tx, const std::string& roomName){
+std::vector<nlohmann::json> Database::loadRoom(pqxx::work& tx, const std::string& roomId){
     std::vector<nlohmann::json> messages;
 
     pqxx::result r = tx.exec(
-        "SELECT username, message, datetime FROM rooms WHERE roomname = " + tx.quote(serialize(roomName)) + " ORDER BY datetime ASC"
+        "SELECT username, message, datetime FROM rooms WHERE roomid = " + tx.quote(serialize(roomId)) + " ORDER BY datetime ASC"
     );
 
     for (const auto& row : r){
@@ -192,17 +206,19 @@ std::vector<nlohmann::json> Database::loadRoom(pqxx::work& tx, const std::string
     return messages;
 }
 
-std::vector<std::string> Database::getRoomNames(pqxx::work& tx, const std::string& username){
-    std::vector<std::string> rooms;
+std::map<std::string, std::string>  Database::getRooms(pqxx::work& tx, const std::string& username){
+    std::map<std::string, std::string> roomMap;
 
     pqxx::result r = tx.exec(
-        "SELECT roomname FROM usersinrooms WHERE username = " + tx.quote(serialize(username))
+        "SELECT r.roomid, rn.roomname FROM usersinrooms r "
+        "JOIN roomnames rn ON r.roomid = rn.roomid "
+        "WHERE r.username = " + tx.quote(serialize(username))
     );
 
-    for (const auto& row : r){
-        rooms.push_back(row["roomname"].c_str());
+    for (const auto& row : r) {
+        roomMap[row["roomid"].c_str()] = row["roomname"].c_str();
     }
 
-    return rooms;
+    return roomMap;
 }
 

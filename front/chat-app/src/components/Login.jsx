@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 
-const Login = ({ onLogin }) => {
+const Login = ({ onLogin, socket }) => {
   const [isLogin, setIsLogin] = useState(true);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [pending, setPending] = useState(true);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -13,15 +14,41 @@ const Login = ({ onLogin }) => {
       setError('Username and password are required');
       return;
     }
-    
-    // In a real app, we would validate credentials with a backend
-    // For now, we'll just pass the username to the parent component
-    onLogin({
-      id: Date.now().toString(),
-      name: username,
-      avatar: `/api/placeholder/40/40?text=${username.charAt(0).toUpperCase()}`
-    });
+
+    setPending(true);
+
+    if(isLogin){
+      const message = `1\n${username}\n${password}`;
+      socket.send(message);
+    } else {
+      const message = `0\n${username}\n${password}`;
+      socket.send(message);
+    }
+
   };
+
+  React.useEffect(() => {
+    if(pending){
+    const handleMessage = (event) => {
+      const data = event.data.trim();
+
+      if (data === "0") {
+        onLogin({
+          name: username,
+          avatar: `/api/placeholder/40/40?text=${username.charAt(0).toUpperCase()}`
+        });
+      }
+
+      setPending(false);
+    };
+
+    socket.addEventListener('message', handleMessage);
+
+    return () => {
+      socket.removeEventListener('message', handleMessage);
+    };
+    }
+  }, [socket, onLogin, username]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

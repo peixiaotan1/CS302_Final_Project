@@ -13,6 +13,7 @@ class Database {
 public:
     Database();
     bool userExists(pqxx::work &tx, std::string username);
+    bool roomExists(pqxx::work &tx, std::string roomName);
     bool loginUser(pqxx::work &tx, std::string username, std::string password);
     bool createUser(pqxx::work &tx, std::string username, std::string password);
     bool userInRoom(pqxx::work& tx, std::string room, std::string user);
@@ -24,10 +25,10 @@ public:
     std::string createRoom(pqxx::work &tx, std::vector<std::string> usersToAdd, std::string name);
     void addUserToRoom(pqxx::work& tx, std::string roomName, std::string userToAdd);
     std::vector<nlohmann::json> loadRoom(pqxx::work& tx, const std::string& roomName);
-    std::vector<std::string> getRoomNames(pqxx::work& tx, const std::string& user);
+    std::map<std::string, std::string> getRooms(pqxx::work& tx, const std::string& user);
 
     // Generates a random code so each room is unique even if they have the same name (if/when we add room names)
-    std::string generateRandomRoomName();
+    std::string generateRandomRoomId();
 
     // Just to view a table
     void dumpTable(pqxx::work& tx, const std::string& table);
