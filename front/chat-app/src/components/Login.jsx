@@ -28,27 +28,37 @@ const Login = ({ onLogin, socket }) => {
   };
 
   React.useEffect(() => {
-    if(pending){
-    const handleMessage = (event) => {
-      const data = event.data.trim();
+    if (pending) {
+      const handleMessage = (event) => {
+        const data = event.data.trim();
 
-      if (data === "0") {
-        onLogin({
-          name: username,
-          avatar: `/api/placeholder/40/40?text=${username.charAt(0).toUpperCase()}`
-        });
-      }
+        if (data === "0") {
+          // Successful login/signup
+          onLogin({
+            name: username,
+            avatar: `/api/placeholder/40/40?text=${username.charAt(0).toUpperCase()}`
+          });
+        } else if (data === "1") {
+          // Invalid credentials for login
+          setError('Invalid username or password');
+        } else if (data === "2") {
+          // Username already exists for signup
+          setError('Username already exists. Please choose another username.');
+        } else if (data === "3") {
+          // Generic server error
+          setError('Server error. Please try again later.');
+        }
 
-      setPending(false);
-    };
+        setPending(false);
+      };
 
-    socket.addEventListener('message', handleMessage);
+      socket.addEventListener('message', handleMessage);
 
-    return () => {
-      socket.removeEventListener('message', handleMessage);
-    };
+      return () => {
+        socket.removeEventListener('message', handleMessage);
+      };
     }
-  }, [socket, onLogin, username]);
+  }, [socket, onLogin, username, pending]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100 px-4">

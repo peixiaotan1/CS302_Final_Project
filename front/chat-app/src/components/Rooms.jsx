@@ -36,53 +36,73 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
 
   useEffect(() => {
     const handleMessage = (event) => {
+      try {
         const data = event.data.trim();
-      if(makingNewRoom){
-        const newRoom = {
-          id: data,
-          name: newRoomName,
-          members: 1,
-        };
-
-        setRooms([...rooms, newRoom]);
-        setNewRoomName("");
-        setShowCreateModal(false);
-        setError("");
-        setMakingNewRoom(false);
-      } else if (joining){
-        if (data === "0"){
+        
+        if (makingNewRoom) {
           const newRoom = {
             id: data,
-            name: data,
+            name: newRoomName,
             members: 1,
           };
-  
-          setRooms([...rooms, newRoom]);
 
-          setRoomIdToJoin("");
-          setShowJoinModal(false);
+          setRooms(prevRooms => [...prevRooms, newRoom]);
+          setNewRoomName("");
+          setShowCreateModal(false);
           setError("");
+          setMakingNewRoom(false);
+        } else if (joining) {
+          // Check if the response is a room ID (successful join)
+          if (data && data !== "0") {
+            // Get room name from the join input or use the room ID as name
+            const roomName = roomIdToJoin;
+            const newRoom = {
+              id: data,
+              name: roomName,
+              members: 1,
+            };
+            
+            setRooms(prevRooms => {
+              // Check if room already exists to avoid duplicates
+              const roomExists = prevRooms.some(room => room.id === data);
+              if (roomExists) {
+                return prevRooms;
+              }
+              return [...prevRooms, newRoom];
+            });
+            
+            setRoomIdToJoin("");
+            setShowJoinModal(false);
+            setError("");
+            setJoining(false);
+          } else if (data === "0") {
+            setError("Room not found");
+            setJoining(false);
+          }
         } else {
-          setError("Room not found");
+          try {
+            const response = JSON.parse(data);
+            if (response && response.rooms) {
+              setRooms(response.rooms);
+            }
+          } catch (err) {
+            console.error("Error parsing room data:", err);
+          }
         }
-      } else {
-        const response = JSON.parse(data);
-        const rooms = response.rooms;
-
-        setRooms(rooms);
-        setShowCreateModal(false);
-        setNewRoomName("");
-        setError("");
+        
+        setPending(false);
+      } catch (err) {
+        console.error("Error handling message:", err);
+        setPending(false);
       }
-      
-      setPending(false);
     };
+    
     socket.addEventListener("message", handleMessage);
 
     return () => {
       socket.removeEventListener("message", handleMessage);
     };
-  }, [socket, makingNewRoom, rooms, newRoomName]);
+  }, [socket, makingNewRoom, joining, newRoomName, roomIdToJoin]);
 
   const handleCreateRoom = (e) => {
     e.preventDefault();
