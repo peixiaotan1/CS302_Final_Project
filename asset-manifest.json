@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/CS302_Final_Project/static/css/main.b3efe10a.css",
+    "main.js": "/CS302_Final_Project/static/js/main.1aad53a4.js",
+    "index.html": "/CS302_Final_Project/index.html",
+    "main.b3efe10a.css.map": "/CS302_Final_Project/static/css/main.b3efe10a.css.map",
+    "main.1aad53a4.js.map": "/CS302_Final_Project/static/js/main.1aad53a4.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.b3efe10a.css",
+    "static/js/main.1aad53a4.js"
+  ]
+}
