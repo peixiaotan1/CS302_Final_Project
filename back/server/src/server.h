@@ -35,6 +35,7 @@ private:
     void on_open(websocketpp::connection_hdl hdl);
     void on_close(websocketpp::connection_hdl hdl);
     void on_message(websocketpp::connection_hdl hdl, server::message_ptr msg);
+    void remove_user_from_room(std::string s);
 
     std::string create_user(std::string userPass);
     std::string login_user(std::string userPass);
