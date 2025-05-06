@@ -178,8 +178,14 @@ std::string MyServer::get_room_list(std::string user) {
 }
 
 void MyServer::remove_user_from_room(std::string s){
+    std::string roomId, user;
+    std::istringstream stream(s);
+    
     pqxx::work tx(db->con);
-    db->removeUserFromRoom(tx, s.substr(s.find("\n"),s.rfind("\n")), s.substr(s.rfind("\n")));
+
+    std::getline(stream, roomId);
+    std::getline(stream, user);
+    db->removeUserFromRoom(tx, roomId, user);
     tx.commit();
 }
 

@@ -4,7 +4,7 @@ import './index.css';
 import App from './App';
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
-const socket = new WebSocket('wss://df6a-174-177-46-187.ngrok-free.app');
+const socket = new WebSocket('wss://2af2-174-177-46-187.ngrok-free.app');
 
 let pingInterval
 

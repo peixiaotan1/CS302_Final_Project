@@ -95,7 +95,7 @@ bool Database::userInRoom(pqxx::work& tx, std::string room, std::string user){
 
 bool Database::removeUserFromRoom(pqxx::work& tx, std::string room, std::string user){
 
-    if(Database::userInRoom(tx, room, user)){
+    if(!Database::userInRoom(tx, room, user)){
         tx.exec("DELETE FROM usersinrooms WHERE username = '" + serialize(user) + "' AND roomid = '" + serialize(room) + "'");
         return true;
     }
