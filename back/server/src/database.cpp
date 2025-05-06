@@ -150,7 +150,17 @@ std::string Database::createRoom(pqxx::work& tx, std::vector<std::string> usersT
 }
 
 
-void Database::addUserToRoom(pqxx::work& tx, std::string roomId, std::string userToAdd){
+std::string Database::addUserToRoom(pqxx::work& tx, std::string roomId, std::string userToAdd){
+    
+    pqxx::result roomResult = tx.exec(
+        "SELECT roomname FROM roomnames WHERE roomid = " + tx.quote(serialize(roomId)) + " LIMIT 1"
+    );
+
+    if (roomResult.empty()) {
+        return "";
+    }
+
+    std::string roomName = roomResult[0]["roomname"].c_str();
 
     tx.exec(
         "UPDATE users SET rooms = array_append(rooms, '" + tx.esc(serialize(roomId)) + "') "
@@ -162,6 +172,8 @@ void Database::addUserToRoom(pqxx::work& tx, std::string roomId, std::string use
         tx.quote(serialize(userToAdd)) + ", " + tx.quote(serialize(roomId)) +
         ") ON CONFLICT DO NOTHING"
     );
+
+    return roomName;
 }
 
 bool Database::createDM(pqxx::work& tx, std::string userA, std::string userB){
