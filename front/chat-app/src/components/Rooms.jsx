@@ -161,9 +161,6 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
                       Exit
                     </button>
                   </div>
-                  <p className="text-gray-600 text-sm mb-3">
-                    {room.members} members
-                  </p>
                   <button
                     onClick={() => enterRoom(room.id, room.name)}
                     className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 rounded-md text-sm"
