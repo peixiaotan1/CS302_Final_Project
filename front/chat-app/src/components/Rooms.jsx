@@ -7,7 +7,6 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
   const [newRoomName, setNewRoomName] = useState("");
   const [roomIdToJoin, setRoomIdToJoin] = useState("");
   const [error, setError] = useState("");
-  const [pending, setPending] = useState(true);
   const [makingNewRoom, setMakingNewRoom] = useState(false);
   const [joining, setJoining] = useState(false);
 
@@ -18,7 +17,6 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
       if (sentRef.current) return;
       if (socket.readyState === WebSocket.OPEN) {
         socket.send(`7\n${currentUser}`);
-        setPending(true);
         sentRef.current = true;
       } else {
         setTimeout(trySend, 100);
@@ -52,12 +50,11 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
           setError("");
           setMakingNewRoom(false);
         } else if (joining) {
-          // Check if the response is a room ID (successful join)
-          if (data && data !== "0") {
-            // Get room name from the join input or use the room ID as name
-            const roomName = roomIdToJoin;
+          if (data && data !== "") {
+
+            const roomName = data;
             const newRoom = {
-              id: data,
+              id: roomIdToJoin,
               name: roomName,
               members: 1,
             };
@@ -90,10 +87,8 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
           }
         }
         
-        setPending(false);
       } catch (err) {
         console.error("Error handling message:", err);
-        setPending(false);
       }
     };
     
@@ -111,7 +106,6 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
       return;
     }
 
-    setPending(true);
     setMakingNewRoom(true);
     socket.send(`2\n${newRoomName}\n${currentUser}`);
   };

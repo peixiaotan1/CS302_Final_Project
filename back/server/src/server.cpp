@@ -71,7 +71,7 @@ void MyServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr m
         m_server.send(hdl, build_room(input), websocketpp::frame::opcode::text);
         break;
     case '3':
-        add_to_room(input);
+        m_server.send(hdl, add_to_room(input), websocketpp::frame::opcode::text);
         break;
     case '4':
         m_server.send(hdl, load_room_chats(input), websocketpp::frame::opcode::text);
@@ -190,18 +190,19 @@ void MyServer::remove_user_from_room(std::string s){
 }
 
 
-void MyServer::add_to_room(std::string nameAndUser){
-    std::string name, user;
+std::string MyServer::add_to_room(std::string nameAndUser){
+    std::string name, user, result;
     std::istringstream stream(nameAndUser);
 
     std::getline(stream, name);
     std::getline(stream, user);
 
     pqxx::work tx(db->con);
-    db->addUserToRoom(tx, name, user);
+    result = db->addUserToRoom(tx, name, user);
 
     db->dumpTable(tx, "usersinrooms");
     tx.commit();
+    return result;
 }
 
 // Returns all the messages in a room, check db function for json structure
