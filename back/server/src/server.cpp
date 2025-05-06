@@ -85,6 +85,9 @@ void MyServer::on_message(websocketpp::connection_hdl hdl, server::message_ptr m
     case '7':
         m_server.send(hdl, get_room_list(input), websocketpp::frame::opcode::text);
         break;
+    case '8':
+        remove_user_from_room(input);
+        break;
     } 
 }
 
@@ -174,7 +177,17 @@ std::string MyServer::get_room_list(std::string user) {
     return j.dump();
 }
 
+void MyServer::remove_user_from_room(std::string s){
+    std::string roomId, user;
+    std::istringstream stream(s);
+    
+    pqxx::work tx(db->con);
 
+    std::getline(stream, roomId);
+    std::getline(stream, user);
+    db->removeUserFromRoom(tx, roomId, user);
+    tx.commit();
+}
 
 
 void MyServer::add_to_room(std::string nameAndUser){

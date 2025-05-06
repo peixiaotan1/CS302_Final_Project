@@ -128,9 +128,8 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
   };
 
   const handleExitRoom = (roomId) => {
-    // In a real app, this would send a request to the backend to exit the room
-    // For now, we'll just remove it from our list (simulating leaving the room)
     setRooms(rooms.filter((room) => room.id !== roomId));
+    socket.send(`8\n${roomId}\n${currentUser}`);
   };
 
   const enterRoom = (roomId, roomName) => {
@@ -182,9 +181,6 @@ const Rooms = ({ currentUser, onEnterRoom, socket, onRoomsUpdate }) => {
                       Exit
                     </button>
                   </div>
-                  <p className="text-gray-600 text-sm mb-3">
-                    {room.members} members
-                  </p>
                   <button
                     onClick={() => enterRoom(room.id, room.name)}
                     className="w-full bg-blue-100 hover:bg-blue-200 text-blue-800 py-2 rounded-md text-sm"
