@@ -1,0 +1,80 @@
+CS302 Final Report
+
+Meetings:
+
+2/19/25 4:30pm
+Initial meeting and discussion on project ideas, everyone present, decided on a messaging app with Xiaopei on the frontend and Elias and Ian on the backend.
+
+2/21/25 2:20pm
+Decided on the logistics and tools we’ll use for the project, everyone present.
+
+4/4/25 11:45pm
+Worked together to tie up the frontend and backend, Xiaopei and Elias present.
+
+Time Log:
+
+Elias:
+Researched services to host the site's server (2 hours)
+Making plans on how to organize backend (1 hour)
+Researching React and getting app running (1 hour)
+Researching websockets (30mins)
+Setting up a server (2 hours)
+Get 2 pcs to send messages to the server (2 hour)
+Built server functions (4 hours)
+Built database functions (4 hours)
+Built template html page for testing functionality (2 hours)
+Tying backend and frontend pt1 (2 hours)
+Tying backend and frontend pt2 (2 hours)
+Tying backend and frontend pt3 (1 hours)
+
+Xiaopei
+Have the git repository and project folders setup (10 mins)
+Have the UI design draft                          (30 mins)
+Research on React implementation and env setup         (1 hour)             
+Have the React UI implemented                      (3 hours)
+Have the Button feature implemented               (1 hour)
+Edited and polished the UI and details            (2 hours)
+Played and tested on the backend                  (2 hours)
+Researched implementation with CPP to frontend   (2 hours)
+Incorporated with backend			           (2 hours)
+Fixed bugs and reviewed			           (1 hour)
+
+Ian
+Setup react env to render frontend (30 min)
+Read up on react (2 hrs)
+Postgres (1 hour)
+  Docker setup, config, and sharing (3 hours)
+  Begin postrges-cpp port for server backend  (2 hours) 
+
+
+Proof of git repository use (47 commits)
+https://github.com/peixiaotan1/CS302_Final_Project/commits/main/
+
+
+User Manual:
+All steps assume Linux environment
+
+Step 1: Download dependencies 
+docker-runtime pqxx libboost-all-dev libboost-version-dev libssl-dev libpqxx-dev
+
+Step 2: Load Docker Image
+download this file: https://drive.google.com/file/d/1TmHIJ4m38X47kzKH5QoCyIFJkAwnzL0g/view?usp=sharing
+run: docker load -i [file name]
+start as need on machine, I prefer the desktop UI
+docker run --hostname=4f03e2e814fe --env=POSTGRES_PASSWORD=admin --env=PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/lib/postgresql/17/bin --env=GOSU_VERSION=1.17 --env=LANG=en_US.utf8 --env=PG_MAJOR=17 --env=PG_VERSION=17.4-1.pgdg120+2 --env=PGDATA=/var/lib/postgresql/data --volume=/var/lib/postgresql/data --network=bridge -p 5432:5432 --restart=no --runtime=runc -d postgres
+
+Step 3: Build and run the server
+Navigate to back/server and run the following command
+-rf build/ && mkdir build && cd build/ && cmake .. && make && cd ..
+Then run ./build/messaging-app-server
+
+Step 4: Forward Port
+To actually get your server visible to other computers, you need to forward your port. What our team had done was use the service called ngrok and signed up for their free tier. Once you make an account and install it, run ./ngrok http 8080.
+
+Step 5: Connect Websocket to React Page
+Get the forwarding link from ngrok (copy everything after https://) then navigate to front/chat-app/src/index.js and paste it into const socket = new WebSocket('wss://~~~~~');
+
+What’s Lacking:
+Encryption for messages
+Sometimes users are not properly removed from a room in the database
+Showing all users existing, and number of users
